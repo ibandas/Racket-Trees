@@ -95,6 +95,7 @@ definitions:
                "silver"
                SYLVAN
                INDEPENDENCE))
+
 (define ANNA
   (make-alpaca "Louisiana Baby 1"
                "male"
@@ -102,6 +103,7 @@ definitions:
                "white"
                JERICHO
                "unknown"))
+
 (define ANN
   (make-alpaca "Louisiana Baby 7"
                "male"
@@ -290,19 +292,28 @@ anywhere in his or her pedigree, and #false otherwise.
     [(or (string? alpaca1)
          (string? alpaca2))
      #false]
-    [else (or (< (date-year (alpaca-dob alpaca1))
-                 (date-year (alpaca-dob alpaca2)))
-              (and (= (date-year (alpaca-dob alpaca1))
-                      (date-year (alpaca-dob alpaca2)))
-                   (< (date-month (alpaca-dob alpaca1))
-                      (date-month (alpaca-dob alpaca2))))
-              (and (= (date-year (alpaca-dob alpaca1))
-                      (date-year (alpaca-dob alpaca2)))
-                   (= (date-month (alpaca-dob alpaca1))
-                      (date-month (alpaca-dob alpaca2)))
-                   (< (date-day (alpaca-dob alpaca1))
-                      (date-day (alpaca-dob alpaca2)))))]))
-;
+    [else (date-helper (alpaca-dob alpaca1) (alpaca-dob alpaca2))]))
+
+
+; date-helper : Date Date -> Boolean
+; Determines whether dob1 is earlier than dob2 or not
+(check-expect (date-helper (make-date 1990 10 30) (make-date 2000 11 12)) #true)
+(check-expect (date-helper (make-date 2000 11 12) (make-date 1990 10 30)) #false)
+(check-expect (date-helper (make-date 2000 10 12) (make-date 2000 11 30)) #true)
+(check-expect (date-helper (make-date 2000 11 30) (make-date 2000 10 12)) #false)
+(check-expect (date-helper (make-date 2000 10 12) (make-date 2000 10 30)) #true)
+(check-expect (date-helper (make-date 2000 10 30) (make-date 2000 10 12)) #false)
+(check-expect (date-helper (make-date 2000 10 30) (make-date 2000 10 30)) #false)
+; Strategy: Function Composition
+(define (date-helper dob1 dob2)
+  (or (< (date-year dob1) (date-year dob2))
+      (and (= (date-year dob1) (date-year dob2))
+          (< (date-month dob1) (date-month dob2)))
+      (and (= (date-year dob1) (date-year dob2))
+          (= (date-month dob1) (date-month dob2))
+          (< (date-day dob1) (date-day dob2)))))
+
+
 (check-expect (date-earlier? LOUI SYLVAN) #true)
 (check-expect (date-earlier? LOUISA ANNABELL) #true)
 ;
