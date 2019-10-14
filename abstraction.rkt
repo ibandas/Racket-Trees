@@ -21,8 +21,13 @@
 ; Examples (add more):
 ;  - (build-straight-line 2 (list 1 2 3)) =>
 ;      (list (make-posn 2 1) (make-posn 2 2) (make-posn 2 3))
-#;
-(define (build-straight-line n ys) ...)
+(check-expect (build-straight-line 2 '())
+              '())
+(check-expect (build-straight-line 2 '(1 2 3))
+              (list (make-posn 2 1) (make-posn 2 2) (make-posn 2 3)))
+; strategy: function composition
+(define (build-straight-line n ys)
+  (map make-posn (make-list (length ys) n) ys))
 
 
 ;; Use `filter` to write this function:
@@ -30,16 +35,44 @@
 ; pts-north : Posn [List-of Posn] -> [List-of Posn]
 ; Returns the positions from `ps` that are north of `p`,
 ; that is, whose y coordinate is greater than `p`'s y coordinate.
-#;
-(define (pts-north p ps) ...)
+; Examples:
+(check-expect (pts-north (make-posn 2 3) '()) '())
+(check-expect (pts-north (make-posn 2 3) (list (make-posn 1 2)
+                                               (make-posn 3 1)
+                                               (make-posn 4 0)))
+              '())
+(check-expect (pts-north (make-posn 2 3) (list (make-posn 1 2)
+                                               (make-posn 3 4)
+                                               (make-posn 4 4)))
+              (list (make-posn 3 4)
+                    (make-posn 4 4)))
+; Strategy: function composition
+(define (pts-north p ps)
+  (filter (compare-to > p) ps))
+; compare-to: [X X -> Boolean] X -> [X -> Boolean]
+; Creates a predicate to compare to a given value.
+; Examples:
+(check-satisfied (make-posn 2 3) (compare-to > (make-posn 1 2)))
+; Strategy: domain knowledge
+(define (compare-to compare x)
+  (local [(define (pred? y)
+            (compare (posn-y y) (posn-y x)))]
+    pred?))
 
 
 ;; Use `foldr` to write this function:
 
 ; total-width : [List-of Image] -> Number
 ; Returns the sum of the widths of all images in `loi`.
-#;
-(define (total-width loi) ...)
+; Examples:
+(check-expect (total-width '()) 0)
+(check-expect (total-width (list (circle 5 "solid" "red")
+                                 (rectangle 12 4 "solid" "blue")
+                                 (ellipse 5 10 "outline" "black")))
+              27)
+; Strategy: 
+(define (total-width loi)
+  (foldr + 0 (map image-width loi)))
 
 
 ;; The remaining exercises in this file use functions to represent
@@ -67,9 +100,25 @@
 ;      (list (make-posn 1 1) (make-posn 2 2))
 ;  - (only-on-curve parabola SOME-POSNS) =>
 ;      (list (make-posn 1 1))
-#;
-(define (only-on-curve f ps) ...)
+(check-expect (only-on-curve diagonal '())
+              '())
+(check-expect (only-on-curve diagonal SOME-POSNS)
+              (list (make-posn 1 1) (make-posn 2 2)))
+(check-expect (only-on-curve parabola SOME-POSNS)
+              (list (make-posn 1 1)))
+; Strategy: function composition
+(define (only-on-curve f ps)
+  (filter (my-compare-to memq? (map f (map posn-x ps))) ps))
 
+; my-compare-to: [X X -> Boolean] X -> [X -> Boolean]
+; Creates a predicate to compare to a given value.
+; Examples:
+(check-satisfied (make-posn 2 3) (my-compare-to > 2))
+; Strategy: domain knowledge
+(define (my-compare-to compare x)
+  (local [(define (pred? y)
+            (compare (posn-y y) x))]
+    pred?))
 
 ; graph-curve : [Number -> Number] [List-of Number] -> [List-of Posn]
 ; Returns the list of positions on the curve `f` whose x-coordinates
@@ -78,8 +127,14 @@
 ; Examples (add more):
 ;  - (graph-curve parabola (list 1 2 3)) =>
 ;      (list (make-posn 1 1) (make-posn 2 4) (make-posn 3 9))
-#;
-(define (graph-curve f xs) ...)
+(check-expect (graph-curve parabola '()) '())
+(check-expect (graph-curve parabola (list 1 2 3))
+              (list (make-posn 1 1) (make-posn 2 4) (make-posn 3 9)))
+(check-expect (graph-curve diagonal (list 1 2 3))
+              (list (make-posn 1 1) (make-posn 2 2) (make-posn 3 3)))
+; Strategy: function composition
+(define (graph-curve f xs)
+  (map make-posn xs (map f xs)))
 
 
 ; flatten-posns : [List-of Posn] -> [List-of Number]
@@ -90,8 +145,18 @@
 ; Examples (add more):
 ;  - (flatten-posns SOME-POSNS) =>
 ;      (list 1 0 1 1 2 2)
-#;
-(define (flatten-posns ps) ...)
+(check-expect (flatten-posns '()) '())
+(check-expect (flatten-posns SOME-POSNS)
+              (list 1 0 1 1 2 2))
+; Strategy: function composition
+(define (flatten-posns ps)
+  (foldr append '() (map flat-a-posn ps)))
+; flat-a-posn: Posn -> [list-of Number]
+; Constructs a list of x and y coordinates of a point 'p'
+(check-expect (flat-a-posn (make-posn 0 0))
+              (list 0 0))
+(define (flat-a-posn p)
+  (list (posn-x p) (posn-y p)))
 
 
 ; possible-ys : [List-of [Number -> Number]]
@@ -104,6 +169,12 @@
 ; Examples (add more):
 ;  - (possible-ys (list diagonal parabola) 7) =>
 ;      (list 7 49)
-#;
-(define (possible-ys loc x) ...)
+(check-expect (possible-ys '() 7) '())
+(check-expect (possible-ys (list diagonal parabola) 7) (list 7 49))
+; Strategy: function composition
+(define (possible-ys loc x)
+  (map function (make-list (length loc) x) loc))
+; function: Number [Number -> Number] -> Number
+(define (function x curve)
+  (curve x))
 
